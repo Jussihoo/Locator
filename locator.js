@@ -1,29 +1,17 @@
-var socket = io("http://localhost:8060"); 
+var socket = io("http://localhost:8040"); 
+
 socket.on('PushLocation', function (data) {
   console.log("got data from socket");
 
   var allData = JSON.parse(data);
   console.log("data: ", data);
-
-  var tempData = []; // init
-
-  if (allData.source === "targetman") {
-          tempData.name = allData.name;
-          tempData.lat = allData.LAT;
-          tempData.lon = allData.LON;
-          console.log("TargetMan: ", tempData);
-  } else if (allData.source === "dog") {
-          tempData.lat = allData.LAT;
-          tempData.lon = allData.LON;
-          console.log("Dog: ", tempData);
+  if (allData.source === "phone") {
+    console.log("phone");
+  } else if (allData.source === "thingsee") {
+    console.log("Thingsee");
   }
-  updateLocation(tempData.lat, tempData.lon);
+  updateLocation(allData.lat, allData.lon);
 });
-
-// init
-var lat = 61.49505;
-var lon = 23.61751667;
-
 
 var myIcon = L.icon({
 iconUrl: 'jussi_icon.png',
@@ -61,11 +49,44 @@ function updateLocation(lat, lon){
   mymap.setView([lat, lon]);
 }
 
+// Map tile layer URLs
+var mapMMLUrl =   'http://tiles.kartat.kapsi.fi/peruskartta/{z}/{x}/{y}.jpg';
+var mapMMLOrtoUrl = 'http://tiles.kartat.kapsi.fi/ortokuva/{z}/{x}/{y}.jpg';
+var mapOpenStreetUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+var mapGoogleUrl = 'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+var mapGoogleSatUrl = 'http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
 
-var mymap = L.map('mapid').setView([61.49305, 23.61711667], 16);
-L.tileLayer('http://tiles.kartat.kapsi.fi/peruskartta/{z}/{x}/{y}.jpg').addTo(mymap);
+// Map tile layers
+var MML   = L.tileLayer(mapMMLUrl); // MML Terrain maps
+var MMLOrto = L.tileLayer(mapMMLOrtoUrl); // MML orto maps
+var OpenStreet = L.tileLayer(mapOpenStreetUrl); // Open Street maps
+var Google = L.tileLayer(mapGoogleUrl, {id: 'mapbox.light', maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']}); // Google maps
+var GoogleSat = L.tileLayer(mapGoogleSatUrl, {id: 'mapbox.light', maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']}); // Google satellite maps
 
+// init
+var startLat = 61.49505;
+var startLon = 23.61751667;
 
-var marker = new L.marker([61.49305, 23.61711667],{icon: myIcon});
-mymap.addLayer(marker);
+// create map and set the view
+var mymap = L.map('mapid').setView([startLat, startLon], 15);
+//L.tileLayer('http://tiles.kartat.kapsi.fi/peruskartta/{z}/{x}/{y}.jpg').addTo(mymap);
+L.tileLayer(mapGoogleUrl, {id: 'mapbox.light', maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']}).addTo(mymap);
+
+// create marker 
+var marker = new L.marker([startLat, startLon],{icon: myIcon});
+//mymap.addLayer(marker);
+// init routeline
 var polyline = L.polyline([], {color: 'red'}).addTo(mymap);
+
+// create map selector
+var mapTileLayers = {
+			"Google maps": Google,
+      "Google Satellite maps": GoogleSat,
+      "MML Orto maps": MMLOrto,
+      "MML Terrain maps": MML,
+      "Open Street maps": OpenStreet
+		};
+L.control.layers(mapTileLayers).addTo(mymap);
