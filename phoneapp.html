@@ -1,21 +1,24 @@
 <!DOCTYPE HTML>
 <html lang="en">  
 <head>
-	<meta charset="utf-8" />
+	<meta charset="utf-8">
 	<title>Locator sender</title>
-	<script src="phoneapp.js"></script>
+  <link rel="stylesheet" type="text/css" href="phoneapp.css">
 </head>
 <body>
+  <script src="phoneapp.js"></script> 
 	<section id="content">
-		<button onclick="startRoute()">start route</button>
-		<button onclick="stopRoute()">stop route</button>
-		<button onclick="sendPosition()">send my location</button>
-    <button onclick="startAutomaticPosition()">send my position automatically</button>
-    <button onclick="stopAutomaticPosition()">stop automatic sending</button>
+		<button onclick="startRoute(document.getElementById('name').value, document.getElementById('gpx').checked)">start route</button>
+		<button onclick="stopRoute(document.getElementById('name').value)">stop route</button><br>
+		<button onclick="sendPosition(document.getElementById('name').value)">send my location</button>
+    <button onclick="startAutomaticPosition(document.getElementById('name').value)">send my position automatically</button>
+    <button onclick="stopAutomaticPosition()">stop automatic sending</button><br>
+    Name: <input type="text" id="name" value="Jussi">
+    <input type="checkbox" id="gpx">Create GPX File<br> 
 	</section>
 	<section id="map"> 
 		<div id="mapid"></div>
-	</section>
+	</section>  
 </body>
 
 </html> 

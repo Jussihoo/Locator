@@ -2,31 +2,38 @@
 
 // init
 var timerId = 0;
+var locatorName = "";
 
-function startRoute() {
+function startRoute(name, gpx) {
   console.log("start route");
+  console.log(gpx);
   var url = "http://localhost:8040/startRoute";
-  var status = communicateWithTheServer(url,"");    
+  var status = communicateWithTheServer(url,JSON.stringify({"name":name, "gpx": gpx}));    
 }
 
-function stopRoute() {
+function stopRoute(name) {
   console.log("stop route");
   var url = "http://localhost:8040/stopRoute";
-  var status = communicateWithTheServer(url,"");
+  var status = communicateWithTheServer(url,JSON.stringify({"name":name}));
 }
 
 function stopAutomaticPosition(){
   // stop the automatic position update;
+  console.log("stop automatic position update");
   clearTimeout(timerId);
+  timerId = 0;
 }
 
-function startAutomaticPosition(){
+function startAutomaticPosition(name){
+  sendPosition(name); // send this once
   // start a 10 second interval to send coordinates
-  timerId = setInterval(sendPosition, 10*1000);
+  console.log("start automatic position update for " + name);
+  timerId = setInterval(function(){ sendPosition(name); }, 10*1000);
 }
 
-function sendPosition() {
+function sendPosition(name) {
 	if (navigator.geolocation) {
+    locatorName = name;
 		navigator.geolocation.getCurrentPosition(positionSuccess, positionError, { enableHighAccuracy: true });
 	} 
  }
@@ -36,9 +43,10 @@ function positionSuccess(position) {
 		var lon = position.coords.longitude;
 		var acr = position.coords.accuracy;
 
-		console.log("lat " + lat + "longitude " + lon + "accuracy " + acr);
+		console.log("lat " + lat + "longitude " + lon + "accuracy " + acr + "name " + locatorName);
     //alert("lat " + lat + "longitude " + lon + "accuracy " + acr);
-    var position = {"source":"phone", "name":"", "lat":lat, "lon":lon, "accuracy":acr};
+    var position = {"source":"phone", "name":locatorName, "lat":lat, "lon":lon, "accuracy":acr};
+    locatorName = "";
     console.dir(position);
     var url = "http://localhost:8040/sendCoords";
     var status = communicateWithTheServer(url,JSON.stringify(position));

@@ -10,8 +10,7 @@ var DOMParser = require('xmldom').DOMParser;
 var fs = require('fs');
 var socketio  = require ("socket.io");
 
-var xmlDoc = "";
-var fileName = "";
+var locators = [];
 
 server.use(restify.bodyParser());
 
@@ -33,22 +32,10 @@ function pushCoordsData(data){
   console.log("Coordinates pushed");
 }
 
-function sendCoordinates(coordData, res){
-	coordData["source"] = "phone"; /*
-	data["name"] = coordData.name;
-	data["LAT"] = coordData.LAT;
-	data["LON"] = coordData.LON; */
-  if (fileName != ""){
-    updateGPXFile(pushData.lat, pushData.lon,fileName);
-  }
-	pushCoordsData(coordData);
-	console.dir(coordData);
-	sendRes(res, "");
-}
-
 function handleSenses(senses, time){ 
     var pushData = {};  // init
-    pushData["source"] = "thingsee";
+    //pushData["source"] = "thingsee";
+    pushData["name"] = "thingsee";
     for (var i=0; i<senses.length; i++){ // go through all the senses data
       if (senses[i].sId == '0x00010100' ){ // Latitude
         console.log("The latitude is " + senses[i].val); // remove this
@@ -62,10 +49,13 @@ function handleSenses(senses, time){
         console.dir(senses[i]);
       }
     }
+    handleCoordinates(pushData, "thingsee", "");
+    
+    /*
     if (fileName != ""){
-      updateGPXFile(pushData.lat, pushData.lon,fileName);
+      updateGPXFile(pushData.lat, pushData.lon);
     }
-    pushCoordsData(pushData); // send data to browser
+    pushCoordsData(pushData); // send data to browser */
 }
 
 function addZero(i) { // adds leading zero to timestamp to get double digit figure
@@ -77,104 +67,181 @@ if (i < 10) {
 
 function getDateTime() {
     var today = new Date();
-    var dd = today.getDate();
-    var mm = today.getMonth()+1; //January is 0!
+    var dd = addZero(today.getDate());
+    var mm = addZero(today.getMonth()+1); //January is 0!
     var yyyy = today.getFullYear();
-    var h = today.getHours(); 
-    var min = today.getMinutes();
-
-    if(dd<10) {
-        dd='0'+dd
-    } 
-
-    if(mm<10) {
-        mm='0'+mm
-    } 
-    today = "_"+yyyy+"_"+mm+"_"+dd+"_"+h+"_"+min;
+    var h = addZero(today.getHours()); 
+    var min = addZero(today.getMinutes());
+    var sec = addZero(today.getSeconds());
+    
+    today = yyyy+"_"+mm+"_"+dd+"_"+h+"_"+min+"_"+sec;
     console.log(today);
     return today;
 }
 
-function generateGPXFileName() {
+function locateObject(name){
+  this.name = name;
+  var gpxFileName = "";
+  var xmlDoc = "";
+  var lastLocation = {"lat": 0, "lon": 0};
+  console.log("name is "+this.name);
+  this.generateGPXFileName = function() {
     var time = getDateTime();
-    fileName =  "track"+time+".gpx"; 
-    return fileName;
+    gpxFileName =  "track"+"_"+this.name+"_"+time+".gpx";
+    console.log("file name is " + gpxFileName); 
+  };
+  this.createGPXFile = function(){
+    var text="<?xml version=\"1.0\"?>\n"+
+    "<gpx version=\"1.0\" creator=\"Locator\" xmlns=\"http://www.topografix.com/GPX/1/0\">\n"+
+    "  <trk>\n"+
+    "    <trkseg>\n"+
+    "    </trkseg>\n"+
+    "  </trk>\n"+
+    "</gpx>\n";
+    
+    var parser = new DOMParser();
+    xmlDoc = parser.parseFromString(text,"text/xml");
+    fs.writeFile(gpxFileName, xmlDoc, function (err) {
+      if (err) return console.log(err);
+      console.log("GPX File "+ gpxFileName + " created");
+    });
+    return gpxFileName;
+  };
+  this.updateGPXFile = function(lat,lon){
+    // create first <trkpt></trkpt> tags with proper indent
+    var trackSeg = xmlDoc.getElementsByTagName("trkseg")[0];
+    var trackPointEle = xmlDoc.createElement("trkpt");
+    var indent = xmlDoc.createTextNode("   ");
+    trackSeg.appendChild(indent);
+    trackSeg.appendChild(trackPointEle);
+    indent = xmlDoc.createTextNode("\n       ");
+    trackSeg.appendChild(indent)
+    
+    // create lat and lon attributes to the last <trkpt> and handle proper indent
+    var length = xmlDoc.getElementsByTagName("trkpt").length;
+    if (length>0){
+      var trackPoint = xmlDoc.getElementsByTagName("trkpt")[length-1];
+    }
+    trackPoint.setAttribute("lat", lat);
+    trackPoint.setAttribute("lon", lon);
+    indent = xmlDoc.createTextNode("\n          ");
+    trackPoint.appendChild(indent);
+    
+    // add <time>add_time_here</time> tag with proper indent
+    var timeISO = new Date().toISOString();
+    var timeEle = xmlDoc.createElement("time");
+    var timeText = xmlDoc.createTextNode(timeISO);
+    timeEle.appendChild(timeText);
+    trackPoint.appendChild(timeEle);
+    indent = xmlDoc.createTextNode("\n       ");
+    trackPoint.appendChild(indent);
+    
+    fs.writeFile(gpxFileName, xmlDoc, function (err) {
+      if (err) return console.log(err);
+      console.log("GPX File "+ gpxFileName + " updated");
+    });
+  };
+  this.sendCoordinates = function(coordData, source, res){
+  	coordData["source"] = source;
+    if (gpxFileName != ""){
+      this.updateGPXFile(coordData.lat, coordData.lon);
+    }
+  	pushCoordsData(coordData);
+  	console.dir(coordData);
+    if(res != ""){
+  	 sendRes(res, "");
+    }
+  };
 }
 
-function updateGPXFile(LAT, LON){
-  // create first <trkpt></trkpt> tags with proper indent
-  var trackSeg = xmlDoc.getElementsByTagName("trkseg")[0];
-  var trackPointEle = xmlDoc.createElement("trkpt");
-  var indent = xmlDoc.createTextNode("   ");
-  trackSeg.appendChild(indent);
-  trackSeg.appendChild(trackPointEle);
-  indent = xmlDoc.createTextNode("\n       ");
-  trackSeg.appendChild(indent)
-  
-  // create lat and lon attributes to the last <trkpt> and handle proper indent
-  var length = xmlDoc.getElementsByTagName("trkpt").length;
-  if (length>0){
-    var trackPoint = xmlDoc.getElementsByTagName("trkpt")[length-1];
+function handleRouteStart(name, gpx, res){
+  var nameFound = false;
+    if (locators.length >0){
+       for(var i=0;i<locators.length;i++){
+        if (locators[i].name == name){
+          console.log ("locator exists already");
+          sendRes(res, "the locator has already started a track");
+          nameFound = true;
+          break;
+        }
+       }  
+    }
+    if (!nameFound){
+      console.log("name not found");
+      var locator = new locateObject(name);
+      var gpxFileName = "";
+      if (gpx){ // create GPX File
+        locator.generateGPXFileName(name);
+        gpxFileName = locator.createGPXFile();
+      }
+      locators.push({"name": name, "object": locator});
+      console.dir(locators);
+      sendRes(res, gpxFileName);  
+    }
+}
+
+function handleRouteStop(name,res){
+  var nameFound = false;
+  if (locators.length >0){
+     for(var i=0;i<locators.length;i++){
+      if (locators[i].name == name){
+        console.log ("locator found");
+        locators.splice(i,1);
+        console.log ("locator object has been deleted");
+        nameFound = true;
+        sendRes(res, "OK");  
+        break;
+      }
+     }  
   }
-  trackPoint.setAttribute("lat", LAT);
-  trackPoint.setAttribute("lon", LON);
-  indent = xmlDoc.createTextNode("\n          ");
-  trackPoint.appendChild(indent);
-  
-  // add <time>add_time_here</time> tag with proper indent
-  var timeISO = new Date().toISOString();
-  var timeEle = xmlDoc.createElement("time");
-  var timeText = xmlDoc.createTextNode(timeISO);
-  timeEle.appendChild(timeText);
-  trackPoint.appendChild(timeEle);
-  indent = xmlDoc.createTextNode("\n       ");
-  trackPoint.appendChild(indent);
-  
-  fs.writeFile(fileName, xmlDoc, function (err) {
-    if (err) return console.log(err);
-    console.log("GPX File "+ fileName + " updated");
-  });
+  if (!nameFound){
+    console.log("name not found");
+    sendRes(res, "name not found");
+  }
 }
 
-function createGPXFile(fileName){
-  var text="<?xml version=\"1.0\"?>\n"+
-  "<gpx version=\"1.0\" creator=\"Locator\" xmlns=\"http://www.topografix.com/GPX/1/0\">\n"+
-  "  <trk>\n"+
-  "    <trkseg>\n"+
-  "    </trkseg>\n"+
-  "  </trk>\n"+
-  "</gpx>\n";
-  
-  var parser = new DOMParser();
-  xmlDoc = parser.parseFromString(text,"text/xml");
-  fs.writeFile(fileName, xmlDoc, function (err) {
-    if (err) return console.log(err);
-    console.log("GPX File "+ fileName + " created");
-  });
+function handleCoordinates(coordData, source, res){
+  var nameFound = false;
+  if (locators.length >0){
+     for(var i=0;i<locators.length;i++){
+      if (locators[i].name == coordData.name){
+        console.log ("locator exists");
+        locators[i].object.sendCoordinates(coordData, source, res);
+        nameFound = true;  
+        break;
+      }
+     }  
+  }
+  if (!nameFound){
+    console.log ("no locators or name not found");
+  }
 }
-
 
 //REST API implementation sending the coordinates from the mobile phone
 server.post('/sendCoords', function (req, res, next) {
     var coordData = req.params;
     console.log ("coordinates received from phone");
-    sendCoordinates(coordData, res);
+    console.dir(coordData);
+    handleCoordinates(coordData, "phone", res);
     next();
 });
 
-//REST API implementation starting the route
+//REST API implementation for starting the route
 server.post('/startRoute', function (req, res, next) {
     console.log ("Start button clicked");
-    generateGPXFileName(fileName);
-    createGPXFile(fileName);
-    sendRes(res, fileName);
+    var params = req.params;
+    console.dir(params);
+    handleRouteStart(params.name, params.gpx, res);
+    next();
 });
 
-//REST API implementation finishing the route
+//REST API implementation for finishing the route
 server.post('/stopRoute', function (req, res, next) {
     console.log ("stop button clicked");
-    fileName = "";
-    sendRes(res, fileName);
+    var params = req.params;
+    console.log(params.name);
+    handleRouteStop(req.params.name, res);
+    next();
 });
 
 // REST API implementation for handling the push messages from the Thingsee IOT
