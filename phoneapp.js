@@ -44,8 +44,8 @@ function positionSuccess(position) {
 		var acr = position.coords.accuracy;
 
 		console.log("lat " + lat + "longitude " + lon + "accuracy " + acr + "name " + locatorName);
-    //alert("lat " + lat + "longitude " + lon + "accuracy " + acr);
-    var position = {"source":"phone", "name":locatorName, "lat":lat, "lon":lon, "accuracy":acr};
+    var time = Date.now();
+    var position = {"source":"phone", "name":locatorName, "lat":lat, "lon":lon, "accuracy":acr, "time":time};
     locatorName = "";
     console.dir(position);
     var url = "http://localhost:8040/sendCoords";

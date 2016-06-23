@@ -14,7 +14,7 @@ socket.on('PushLocation', function (data) {
   } else if (allData.source === "thingsee") {
     console.log("Thingsee");
   }
-  updateLocation(allData.lat, allData.lon, allData.name);
+  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance);
 });
 
 var jussiIcon = L.icon({
@@ -22,30 +22,30 @@ var jussiIcon = L.icon({
   iconRetinaUrl: 'jussi_icon.png',
   iconSize: [35, 35],
   iconAnchor: [10, 35],
-  popupAnchor: [35, 35]});
+  popupAnchor: [0, -35]});
 
 var maaritIcon = L.icon({
   iconUrl: 'maarit_icon.png',
   iconRetinaUrl: 'maarit_icon.png',
   iconSize: [35, 35],
   iconAnchor: [10, 35],
-  popupAnchor: [35, 35]});
+  popupAnchor: [0, -35]});
 
 var thingseeIcon = L.icon({
   iconUrl: 'thingsee_icon.png',
   iconRetinaUrl: 'thingsee_icon.png',
   iconSize: [35, 35],
   iconAnchor: [10, 35],
-  popupAnchor: [35, 35]});
+  popupAnchor: [0, -35]});
 
 var xIcon = L.icon({
   iconUrl: 'x_icon.png',
   iconRetinaUrl: 'x_icon.png',
   iconSize: [35, 35],
   iconAnchor: [10, 35],
-  popupAnchor: [35, 35]});
+  popupAnchor: [0, -35]});
 
-function updateLocation(lat, lon, name){
+function updateLocation(lat, lon, name, speed, distance){
   var point = [lat,lon];
   
   var nameFound = false;
@@ -55,7 +55,7 @@ function updateLocation(lat, lon, name){
         console.log ("locator exists");
         mymap.removeLayer(locators[i].object.marker);
         var icon = locators[i].object.icon; 
-        locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap);
+        locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km").openPopup();
         locators[i].object.polyline.addLatLng(point);
         console.log("update location for " + name);
         nameFound = true;
@@ -84,7 +84,7 @@ function updateLocation(lat, lon, name){
         var icon = xIcon;
       }
       // create a new marker
-      var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap);
+      var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km").openPopup();
       // create a new polyline
       var polyline = L.polyline([], {color: 'blue'}).addTo(mymap);
       polyline.addLatLng(point);
@@ -95,41 +95,6 @@ function updateLocation(lat, lon, name){
     }
     // set the map view to the last location
     mymap.setView([lat, lon]);
-  
-    /* 
-  
-  if (name != ""){
-    if (name == "Jussi"){
-      mymap.removeLayer(marker);
-      marker = L.marker([lat, lon],{icon: jussiIcon}).addTo(mymap);
-      polyline1.addLatLng(point);
-      console.log("Jussi");
-    }
-    else if (name == "Maarit"){
-      mymap.removeLayer(marker2);
-      marker2 = L.marker([lat, lon],{icon: maaritIcon}).addTo(mymap);
-      polyline2.addLatLng(point);
-      console.log("Maarit");
-    }
-    else if (name == "thingsee"){
-      mymap.removeLayer(marker3);
-      marker3 = L.marker([lat, lon],{icon: thingseeIcon}).addTo(mymap);
-      polyline3.addLatLng(point);
-      console.log("Thingsee");
-    }
-    else{
-      mymap.removeLayer(marker4);
-      marker4 = L.marker([lat, lon],{icon: xIcon}).addTo(mymap); 
-      polyline4.addLatLng(point);
-      console.log("Unknown");
-    }
-  }
-  else{
-    mymap.removeLayer(marker);
-    marker = L.marker([lat, lon],{icon: jussiIcon}).addTo(mymap); 
-    polyline1.addLatLng(point);
-  }
-  mymap.setView([lat, lon]);    */
 }
 
 function locateObject(name, marker, icon, polyline){
@@ -160,24 +125,10 @@ var GoogleSat = L.tileLayer(mapGoogleSatUrl, {id: 'mapbox.light', maxZoom: 20,
 var startLat = 61.49505;
 var startLon = 23.61751667;
 
-// create map and set the view
+// create initial map and set the view
 var mymap = L.map('mapid').setView([startLat, startLon], 15);
-//L.tileLayer('http://tiles.kartat.kapsi.fi/peruskartta/{z}/{x}/{y}.jpg').addTo(mymap);
 L.tileLayer(mapGoogleUrl, {id: 'mapbox.light', maxZoom: 20,
     subdomains:['mt0','mt1','mt2','mt3']}).addTo(mymap);
-
-    /*
-// create markers 
-var marker = new L.marker([startLat, startLon],{icon: jussiIcon});
-var marker2 = new L.marker([startLat, startLon],{icon: maaritIcon});
-var marker3 = new L.marker([startLat, startLon],{icon: thingseeIcon});
-var marker4 = new L.marker([startLat, startLon],{icon: xIcon});
-//mymap.addLayer(marker);
-// init routelines
-var polyline1 = L.polyline([], {color: 'blue'}).addTo(mymap);
-var polyline2 = L.polyline([], {color: 'red'}).addTo(mymap);
-var polyline3 = L.polyline([], {color: 'red'}).addTo(mymap);
-var polyline4 = L.polyline([], {color: 'red'}).addTo(mymap);     */
 
 // create map selector
 var mapTileLayers = {

@@ -9,6 +9,7 @@ var https = require("https");
 var DOMParser = require('xmldom').DOMParser;
 var fs = require('fs');
 var socketio  = require ("socket.io");
+var geolib = require('geolib');
 
 var locators = [];
 
@@ -43,19 +44,14 @@ function handleSenses(senses, time){
       }
 		if (senses[i].sId == '0x00010200' ){ // Longtitude
         console.log("The longitude is " + senses[i].val); // remove this
-        pushData["lon"] = senses[i].val;  
+        pushData["lon"] = senses[i].val; 
+        pushData["time"] = senses[i].ts; // store also timestamp 
       }      
       else{
         console.dir(senses[i]);
       }
     }
     handleCoordinates(pushData, "thingsee", "");
-    
-    /*
-    if (fileName != ""){
-      updateGPXFile(pushData.lat, pushData.lon);
-    }
-    pushCoordsData(pushData); // send data to browser */
 }
 
 function addZero(i) { // adds leading zero to timestamp to get double digit figure
@@ -79,11 +75,16 @@ function getDateTime() {
     return today;
 }
 
+function round(value, decimals) {
+    return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+}
+
 function locateObject(name){
   this.name = name;
   var gpxFileName = "";
   var xmlDoc = "";
-  var lastLocation = {"lat": 0, "lon": 0};
+  var lastLocation = {"lat": 0, "lon": 0, "time": 0};
+  var routeDistance = 0;
   console.log("name is "+this.name);
   this.generateGPXFileName = function() {
     var time = getDateTime();
@@ -146,6 +147,32 @@ function locateObject(name){
     if (gpxFileName != ""){
       this.updateGPXFile(coordData.lat, coordData.lon);
     }
+    // calculate distance between the points
+    if (lastLocation.lat != 0 && lastLocation.lon != 0 ){
+      var distance = geolib.getDistance(
+          {latitude: coordData.lat, longitude: coordData.lon},
+          {latitude: lastLocation.lat, longitude: lastLocation.lon}
+      );
+      routeDistance = routeDistance + distance/1000; // converted into kilometers
+      coordData["distance"] = round(routeDistance,3); // rounding with three decimal
+      console.log("distance between the points is " + distance/1000);
+      //calculate current speed
+      var speed = Math.abs(geolib.getSpeed(
+          {latitude: coordData.lat, longitude: coordData.lon, time: coordData.time},
+          {latitude: lastLocation.lat, longitude: lastLocation.lon, time: lastLocation.time}
+      ));
+      console.log("current speed is " + speed + "km/h");
+      coordData["speed"] = round( speed,1); // rounding with one decimal
+    }
+    else{ // first point. No distance, no speed
+      coordData["distance"] = 0;
+      coordData["speed"] = 0;  
+    }
+    // store the last position
+    lastLocation.lat = coordData.lat;
+    lastLocation.lon = coordData.lon;
+    lastLocation.time = coordData.time;
+    // send coordinates
   	pushCoordsData(coordData);
   	console.dir(coordData);
     if(res != ""){
