@@ -14,7 +14,7 @@ socket.on('PushLocation', function (data) {
   } else if (allData.source === "thingsee") {
     console.log("Thingsee");
   }
-  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime, allData.aveSpeed);
+  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime, allData.aveSpeed, allData.maxSpeed);
 });
 
 var jussiIcon = L.icon({
@@ -45,7 +45,7 @@ var xIcon = L.icon({
   iconAnchor: [10, 35],
   popupAnchor: [0, -35]});
 
-function updateLocation(lat, lon, name, speed, distance, time, aveSpeed){
+function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed){
   var point = [lat,lon];
   
   var nameFound = false;
@@ -55,7 +55,8 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed){
         console.log ("locator exists");
         mymap.removeLayer(locators[i].object.marker);
         var icon = locators[i].object.icon;
-        var popUpText = name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km"+
+        var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
+                        "<br>"+"distance "+ distance + " km"+
                         "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
         locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
         locators[i].object.polyline.addLatLng(point);
@@ -78,12 +79,6 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed){
         else if (name == "thingsee"){
           var icon = thingseeIcon;
         }
-        else if (name == "Hanna"){
-          var icon = hannaIcon;
-        }
-        else if (name == "Sami"){
-          var icon = samiIcon;
-        }
         else{
           var icon = xIcon;
         }
@@ -92,7 +87,8 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed){
         var icon = xIcon;
       }
       // create a new marker
-      var popUpText = name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km"+
+      var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
+                        "<br>"+"distance " + distance + " km"+
                         "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
       var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
       // create a new polyline

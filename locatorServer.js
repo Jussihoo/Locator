@@ -86,6 +86,7 @@ function locateObject(name){
   var lastLocation = {"lat": 0, "lon": 0, "time": 0};
   var routeDistance = 0;
   var startTime = 0;
+  var maxSpeed = 0;
   console.log("name is "+this.name);
   this.generateGPXFileName = function() {
     var time = getDateTime();
@@ -157,13 +158,17 @@ function locateObject(name){
       routeDistance = routeDistance + distance/1000; // converted into kilometers
       coordData["distance"] = round(routeDistance,3); // rounding with three decimal
       console.log("distance between the points is " + distance/1000);
-      //calculate current speed
+      //calculate current speed and max speed
       var speed = Math.abs(geolib.getSpeed(
           {latitude: coordData.lat, longitude: coordData.lon, time: coordData.time},
           {latitude: lastLocation.lat, longitude: lastLocation.lon, time: lastLocation.time}
       ));
       console.log("current speed is " + speed + "km/h");
       coordData["speed"] = round( speed,1); // rounding with one decimal
+      if (speed > maxSpeed){
+        maxSpeed = round( speed,1);
+      }
+      coordData["maxSpeed"] = maxSpeed;
       // calculate the route time
       var routeTime = new Date(coordData.time-startTime);
       coordData["routetime"] = addZero(routeTime.getUTCHours())+":"+addZero(routeTime.getMinutes())+":"+addZero(routeTime.getSeconds());
@@ -176,7 +181,8 @@ function locateObject(name){
       coordData["speed"] = 0;
       startTime = coordData.time; // set the start time in ms
       coordData["routetime"] = 0;
-      coordData["aveSpeed"] = 0;  
+      coordData["aveSpeed"] = 0;
+      coordData["maxSpeed"] = 0;  
     }
     // store the last position
     lastLocation.lat = coordData.lat;
