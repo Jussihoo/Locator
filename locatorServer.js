@@ -85,6 +85,7 @@ function locateObject(name){
   var xmlDoc = "";
   var lastLocation = {"lat": 0, "lon": 0, "time": 0};
   var routeDistance = 0;
+  var startTime = 0;
   console.log("name is "+this.name);
   this.generateGPXFileName = function() {
     var time = getDateTime();
@@ -163,10 +164,19 @@ function locateObject(name){
       ));
       console.log("current speed is " + speed + "km/h");
       coordData["speed"] = round( speed,1); // rounding with one decimal
+      // calculate the route time
+      var routeTime = new Date(coordData.time-startTime);
+      coordData["routetime"] = addZero(routeTime.getUTCHours())+":"+addZero(routeTime.getMinutes())+":"+addZero(routeTime.getSeconds());
+      // calculate average speed
+      var averageSpeed = round((routeDistance / ((coordData.time-startTime)/1000/60/60)),1); // km/h
+      coordData["aveSpeed"] = averageSpeed;
     }
     else{ // first point. No distance, no speed
       coordData["distance"] = 0;
-      coordData["speed"] = 0;  
+      coordData["speed"] = 0;
+      startTime = coordData.time; // set the start time in ms
+      coordData["routetime"] = 0;
+      coordData["aveSpeed"] = 0;  
     }
     // store the last position
     lastLocation.lat = coordData.lat;

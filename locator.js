@@ -14,7 +14,7 @@ socket.on('PushLocation', function (data) {
   } else if (allData.source === "thingsee") {
     console.log("Thingsee");
   }
-  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance);
+  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime, allData.aveSpeed);
 });
 
 var jussiIcon = L.icon({
@@ -45,7 +45,7 @@ var xIcon = L.icon({
   iconAnchor: [10, 35],
   popupAnchor: [0, -35]});
 
-function updateLocation(lat, lon, name, speed, distance){
+function updateLocation(lat, lon, name, speed, distance, time, aveSpeed){
   var point = [lat,lon];
   
   var nameFound = false;
@@ -54,8 +54,10 @@ function updateLocation(lat, lon, name, speed, distance){
       if (locators[i].name == name){
         console.log ("locator exists");
         mymap.removeLayer(locators[i].object.marker);
-        var icon = locators[i].object.icon; 
-        locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km").openPopup();
+        var icon = locators[i].object.icon;
+        var popUpText = name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km"+
+                        "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
+        locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
         locators[i].object.polyline.addLatLng(point);
         console.log("update location for " + name);
         nameFound = true;
@@ -76,6 +78,12 @@ function updateLocation(lat, lon, name, speed, distance){
         else if (name == "thingsee"){
           var icon = thingseeIcon;
         }
+        else if (name == "Hanna"){
+          var icon = hannaIcon;
+        }
+        else if (name == "Sami"){
+          var icon = samiIcon;
+        }
         else{
           var icon = xIcon;
         }
@@ -84,7 +92,9 @@ function updateLocation(lat, lon, name, speed, distance){
         var icon = xIcon;
       }
       // create a new marker
-      var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km").openPopup();
+      var popUpText = name+"<br>"+"speed " + speed + " km/h , distance " + distance + " km"+
+                        "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
+      var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
       // create a new polyline
       var polyline = L.polyline([], {color: 'blue'}).addTo(mymap);
       polyline.addLatLng(point);
