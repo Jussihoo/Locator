@@ -257,6 +257,9 @@ function handleCoordinates(coordData, source, res){
   }
   if (!nameFound){
     console.log ("no locators or name not found");
+    if(res != ""){
+  	 sendRes(res, "no locators or name not found");
+    }
   }
 }
 
