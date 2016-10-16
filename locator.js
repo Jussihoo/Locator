@@ -68,12 +68,18 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
   if (locators.length >0){
      for (var i=0; i<locators.length; i++){
       if (locators[i].name == name){
-        mymap.removeLayer(locators[i].object.marker);
         var icon = locators[i].object.icon;
         var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
                         "<br>"+"distance "+ distance + " km"+
                         "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
-        locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
+        if (locators[i].object.marker.isPopupOpen()) { // popup is open, because the user has opened it. So let's keep it open
+          mymap.removeLayer(locators[i].object.marker); 
+          locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText,{autoPan:false}).openPopup();
+        }
+        else { // user has not opened this popup so let's not open it automatically either 
+          mymap.removeLayer(locators[i].object.marker);
+          locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText,{autoPan:false}); // Does not open popup automatically
+        }                
         locators[i].object.polyline.addLatLng(point);
         nameFound = true;
         if (locators[i].bTarget) { // this user is on followed. Update the view
@@ -107,7 +113,8 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
                         "<br>"+"distance " + distance + " km"+
                         "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
-      var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
+      //var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText, {autoPan:false}).openPopup();
+      var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText, {autoPan:false}); // does not open popup automatically
       // create a new polyline
       var polyline = L.polyline([], {color: 'blue'}).addTo(mymap);
       polyline.addLatLng(point);
