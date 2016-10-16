@@ -216,13 +216,18 @@ L.Control.Targets = L.Control.extend({
           break;
       }
       else if (input.checked && input.targetId != 666) {
-          locators[input.targetId].bTarget = true; // set view to target to this locator
-          // get the coordinates of the last marker
+          // get the coordinates of the last marker of the selected locator
           var latlon = locators[input.targetId].object.marker.getLatLng();
           var lat = latlon['lat'];
           var lon = latlon['lng']; 
           // set the view immediately to the last marker
           mymap.setView([lat, lon]);
+          // clear the current locator to be followed
+          for (var i=0; i<locators.length; i++){ // set all the locators to be not followed
+            locators[i].bTarget = false;
+          }
+          // set view to the selected locator
+          locators[input.targetId].bTarget = true;
           break;  
       } 
     }
