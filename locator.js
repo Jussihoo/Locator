@@ -5,14 +5,19 @@ var locators = [];
 
 var socket = io("http://localhost:8040"); 
 
+socket.on('PushStop', function(name) {
+  var parsedName = JSON.parse(name);
+  // remove locator
+  removeUser(parsedName);
+  // Update the Target relector
+  targetSelector.removeTarget();
+});
+
 socket.on('PushLocation', function (data) {
-  console.log("got data from socket");
 
   var allData = JSON.parse(data);
-  console.log("data: ", data);
   if (allData.source === "phone") {
   } else if (allData.source === "thingsee") {
-    console.log("Thingsee");
   }
   updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime, allData.aveSpeed, allData.maxSpeed);
 });
@@ -44,6 +49,17 @@ var xIcon = L.icon({
   iconSize: [35, 35],
   iconAnchor: [10, 35],
   popupAnchor: [0, -35]});
+  
+function removeUser(name){
+  if (locators.length >0){
+     for (var i=0; i<locators.length; i++){
+        if (locators[i].name == name){
+          locators.splice(i,1);
+          break;
+        }
+     }
+  }
+}
 
 function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed){
   var point = [lat,lon];
@@ -52,7 +68,6 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
   if (locators.length >0){
      for (var i=0; i<locators.length; i++){
       if (locators[i].name == name){
-        console.log ("locator exists");
         mymap.removeLayer(locators[i].object.marker);
         var icon = locators[i].object.icon;
         var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
@@ -60,14 +75,16 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
                         "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
         locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText).openPopup();
         locators[i].object.polyline.addLatLng(point);
-        console.log("update location for " + name);
         nameFound = true;
+        if (locators[i].bTarget) { // this user is on followed. Update the view
+          // set the map view to the last location
+          mymap.setView([lat, lon]);
+        }
         break;
       }
      }  
     }
     if (!nameFound){ // Create new locator
-      console.log("name not found");
       // set icon
       if (name != ""){
         if (name == "Jussi"){
@@ -95,12 +112,12 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       var polyline = L.polyline([], {color: 'blue'}).addTo(mymap);
       polyline.addLatLng(point);
       // create a new locator
-      var locator = new locateObject(name, marker, icon, polyline);
+      var bTarget = false;
+      var locator = new locateObject(name, marker, icon, polyline, bTarget);
       locators.push({"name": name, "object": locator});
-      console.dir(locators);  
+      // Add new locator to Control Targets
+      targetSelector.addTarget(locators.length-1);
     }
-    // set the map view to the last location
-    mymap.setView([lat, lon]);
 }
 
 function locateObject(name, marker, icon, polyline){
@@ -108,7 +125,6 @@ function locateObject(name, marker, icon, polyline){
   this.marker = marker;
   this.icon = icon;
   this.polyline = polyline;
-  console.log("name is "+this.name);
 }
 
 // Map tile layer URLs
@@ -145,3 +161,5 @@ var mapTileLayers = {
       "Open Street maps": OpenStreet
 		};
 L.control.layers(mapTileLayers).addTo(mymap);
+// create the target selector
+var targetSelector = L.control.targets().addTo(mymap);

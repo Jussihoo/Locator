@@ -1,0 +1,56 @@
+/* targets control */
+
+.leaflet-control-targets-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+}
+
+.leaflet-control-targets {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-targets-toggle {
+	background-image: url(images/targets.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-targets-toggle {
+	background-image: url(images/targets-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-targets-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-targets .leaflet-control-targets-list,
+.leaflet-control-targets-expanded .leaflet-control-targets-toggle {
+	display: none;
+	}
+.leaflet-control-targets-expanded .leaflet-control-targets-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-targets-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-targets-scrollbar {
+	overflow-y: scroll;
+	padding-right: 5px;
+	}
+.leaflet-control-targets-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-targets label {
+	display: block;
+	}
+.target-icon {
+  height: 25px; 
+  width: 25px;
+  vertical-align: middle;
+}

@@ -33,6 +33,11 @@ function pushCoordsData(data){
   console.log("Coordinates pushed");
 }
 
+function pushStop(name){
+  io.emit('PushStop', JSON.stringify(name));  // send data to browser
+  console.log("Stop pushed");
+}
+
 function handleSenses(senses, time){ 
     var pushData = {};  // init
     //pushData["source"] = "thingsee";
@@ -229,6 +234,8 @@ function handleRouteStop(name,res){
      for(var i=0;i<locators.length;i++){
       if (locators[i].name == name){
         console.log ("locator found");
+        // send remove to the UI
+        pushStop(name);
         locators.splice(i,1);
         console.log ("locator object has been deleted");
         nameFound = true;
