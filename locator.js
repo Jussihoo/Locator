@@ -125,13 +125,59 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       // Add new locator to Control Targets
       targetSelector.addTarget(locators.length-1);
     }
-}
+}                       
 
 function locateObject(name, marker, icon, polyline){
   this.name = name;
   this.marker = marker;
   this.icon = icon;
   this.polyline = polyline;
+}
+
+function showActiveLocators(client){
+  var activeLocators = JSON.parse(client.responseText);
+  var name = "";
+  var maxSpeed = 0;
+  var distance = 0;
+  var lat = 0;
+  var lon = 0;
+  var time = 0;
+  var aveSpeed = 0;
+  var speed = 0;
+  for (i=0;i<activeLocators.locators.length;i++){
+    name = activeLocators['locators'][i].name;
+    maxSpeed = activeLocators['locators'][i].maxSpeed;
+    distance = activeLocators['locators'][i].routeDistance;
+    lat = activeLocators['locators'][i].lastLocation.lat;
+    lon = activeLocators['locators'][i].lastLocation.lon;
+    time = activeLocators['locators'][i].routeTime;
+    // show locator on map
+    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed) 
+  }
+}
+
+function communicateWithTheServer(url, data, callback) {
+    var client = new XMLHttpRequest(); //
+    client.onreadystatechange = function() {
+        if (client.readyState == 4 && client.status == 200) {
+            callback(client);
+        }
+        // If status code is not 200, do not handle
+        if (client.status != 200) {
+            console.log("status " + client.status + " State: " + client.readyState);
+            return false;
+        }
+    };
+    client.open("POST", url, true);
+    client.withCredentials = false;
+    client.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+    client.send(data);
+}
+
+function getActiveLocators(){
+  console.log("Get active locators");
+  var url = "http://localhost:8040/getActiveLocators";
+  var status = communicateWithTheServer(url,"", showActiveLocators);
 }
 
 // Map tile layer URLs
@@ -170,3 +216,6 @@ var mapTileLayers = {
 L.control.layers(mapTileLayers).addTo(mymap);
 // create the target selector
 var targetSelector = L.control.targets().addTo(mymap);
+
+// get Active Locators from servers and then show those on map
+getActiveLocators();

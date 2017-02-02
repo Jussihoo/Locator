@@ -92,11 +92,20 @@ function locateObject(name){
   var routeDistance = 0;
   var startTime = 0;
   var maxSpeed = 0;
+  var routeTimeStr = "";
   console.log("name is "+this.name);
   this.generateGPXFileName = function() {
     var time = getDateTime();
     gpxFileName =  "track"+"_"+this.name+"_"+time+".gpx";
     console.log("file name is " + gpxFileName); 
+  };
+  this.getLastLocation = function(){
+    var locatorData = {"lastLocation": lastLocation,
+                       "routeDistance": routeDistance,
+                       "maxSpeed": maxSpeed,
+                       "name": this.name,
+                       "routeTime": routeTimeStr};
+    return locatorData;
   };
   this.createGPXFile = function(){
     var text="<?xml version=\"1.0\"?>\n"+
@@ -176,7 +185,8 @@ function locateObject(name){
       coordData["maxSpeed"] = maxSpeed;
       // calculate the route time
       var routeTime = new Date(coordData.time-startTime);
-      coordData["routetime"] = addZero(routeTime.getUTCHours())+":"+addZero(routeTime.getMinutes())+":"+addZero(routeTime.getSeconds());
+      routeTimeStr = addZero(routeTime.getUTCHours())+":"+addZero(routeTime.getMinutes())+":"+addZero(routeTime.getSeconds());
+      coordData["routetime"] = routeTimeStr;
       // calculate average speed
       var averageSpeed = round((routeDistance / ((coordData.time-startTime)/1000/60/60)),1); // km/h
       coordData["aveSpeed"] = averageSpeed;
@@ -250,6 +260,21 @@ function handleRouteStop(name,res){
   }
 }
 
+function getActiveLocators(res){
+  var locatorData = [];
+  if (locators.length >0){
+     for(var i=0;i<locators.length;i++){
+        var data = locators[i].object.getLastLocation();
+        if (data.lastLocation.lat != 0 && data.lastLocation.lon != 0) {
+          locatorData.push(data);
+        }
+     }  
+  }
+  var activeLocators = {};
+  activeLocators["locators"] = locatorData;
+  sendRes(res, activeLocators);  
+}
+
 function handleCoordinates(coordData, source, res){
   var nameFound = false;
   if (locators.length >0){
@@ -294,6 +319,13 @@ server.post('/stopRoute', function (req, res, next) {
     var params = req.params;
     console.log(params.name);
     handleRouteStop(req.params.name, res);
+    next();
+});
+
+//REST API implementation for getting the current active locators, last know place etc. to be shown in the UI
+server.post('/getActiveLocators', function (req, res, next) {
+    getActiveLocators(res);
+    console.log ("A request to get active Locators has been received");
     next();
 });
 
