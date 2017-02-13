@@ -19,7 +19,8 @@ socket.on('PushLocation', function (data) {
   if (allData.source === "phone") {
   } else if (allData.source === "thingsee") {
   }
-  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime, allData.aveSpeed, allData.maxSpeed);
+  updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime,
+                 allData.aveSpeed, allData.maxSpeed, allData.interval, allData.filter, allData.battery);
 });
 
 var jussiIcon = L.icon({
@@ -61,17 +62,51 @@ function removeUser(name){
   }
 }
 
-function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed){
+function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery){
   var point = [lat,lon];
-  
+  var intervalUnit = "";
+  var filterUnit = "";
   var nameFound = false;
+  // set the interval info
+  if (interval != undefined ){
+    if (interval < 60 ) {
+      intervalUnit = "seconds";
+    }
+    else {
+      interval = interval / 60; // convert to minutes
+      intervalUnit = "minutes";
+    }
+  }
+  else {
+    interval = "N/A";
+  }
+  // set the filter info
+  if (filter != undefined ){
+    if (filter == 0) {
+      filter = "OFF";
+    }
+    else {
+      filterUnit = "meters";
+    }
+  }
+  else {
+    filter = "N/A";
+  }
+  // set the battery info
+  if (battery == undefined ){
+    battery = "N/A";
+  }
+  // connect the received location info to locator or create a new one
   if (locators.length >0){
      for (var i=0; i<locators.length; i++){
       if (locators[i].name == name){
         var icon = locators[i].object.icon;
-        var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
-                        "<br>"+"distance "+ distance + " km"+
-                        "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
+        var popUpText = name+"<br>"+"speed: " + speed + " km/h (max " + maxSpeed + " km/h)"+
+                        "<br>"+"distance: "+ distance + " km"+
+                        "<br>"+"average speed: " + aveSpeed + " km/h, time: "+time+
+                        "<br>"+"location interval: " + interval + " " + intervalUnit+
+                        "<br>"+"location filter: " + filter + " " + filterUnit+
+                        "<br>"+"battery level: " + battery + " %";
         if (locators[i].object.marker.isPopupOpen()) { // popup is open, because the user has opened it. So let's keep it open
           mymap.removeLayer(locators[i].object.marker); 
           locators[i].object.marker = L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText,{autoPan:false}).openPopup();
@@ -112,7 +147,10 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       // create a new marker
       var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
                         "<br>"+"distance " + distance + " km"+
-                        "<br>"+"average speed " + aveSpeed + " km/h, time: "+time;
+                        "<br>"+"average speed " + aveSpeed + " km/h, time: "+time+
+                        "<br>"+"location interval: " + interval + " " + intervalUnit+
+                        "<br>"+"location filter: " + filter + " " + filterUnit+
+                        "<br>"+"battery level: " + battery + " %";
       //var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText, {autoPan:false}).openPopup();
       var marker = new L.marker([lat, lon],{icon: icon}).addTo(mymap).bindPopup(popUpText, {autoPan:false}); // does not open popup automatically
       // create a new polyline
@@ -151,8 +189,11 @@ function showActiveLocators(client){
     lat = activeLocators['locators'][i].lastLocation.lat;
     lon = activeLocators['locators'][i].lastLocation.lon;
     time = activeLocators['locators'][i].routeTime;
+    interval = activeLocators['locators'][i].interval;
+    filter = activeLocators['locators'][i].filter;
+    battery = activeLocators['locators'][i].battery;
     // show locator on map
-    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed) 
+    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery); 
   }
 }
 

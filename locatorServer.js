@@ -92,6 +92,9 @@ function locateObject(name){
   var routeDistance = 0;
   var startTime = 0;
   var maxSpeed = 0;
+  var interval = undefined;
+  var filter = undefined;
+  var battery = undefined;
   var routeTimeStr = "";
   console.log("name is "+this.name);
   this.generateGPXFileName = function() {
@@ -104,7 +107,10 @@ function locateObject(name){
                        "routeDistance": routeDistance,
                        "maxSpeed": maxSpeed,
                        "name": this.name,
-                       "routeTime": routeTimeStr};
+                       "routeTime": routeTimeStr,
+                       "interval": interval,
+                       "filter": filter,
+                       "battery": battery};
     return locatorData;
   };
   this.createGPXFile = function(){
@@ -163,6 +169,9 @@ function locateObject(name){
     if (gpxFileName != ""){
       this.updateGPXFile(coordData.lat, coordData.lon);
     }
+    if (coordData.battery) {
+      coordData.battery = round((coordData.battery * 100),1); // convert into percentage with 1 decimal
+    }
     // calculate distance between the points
     if (lastLocation.lat != 0 && lastLocation.lon != 0 ){
       var distance = geolib.getDistance(
@@ -203,6 +212,16 @@ function locateObject(name){
     lastLocation.lat = coordData.lat;
     lastLocation.lon = coordData.lon;
     lastLocation.time = coordData.time;
+    // store filter, interval and battery level
+    if (coordData.interval) {
+      interval = coordData.interval;
+    }
+    if (coordData.filter) {
+      filter = coordData.filter;
+    }
+    if (coordData.battery) {
+      battery = coordData.battery;
+    }
     // send coordinates
   	pushCoordsData(coordData);
   	console.dir(coordData);
