@@ -20,7 +20,7 @@ socket.on('PushLocation', function (data) {
   } else if (allData.source === "thingsee") {
   }
   updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime,
-                 allData.aveSpeed, allData.maxSpeed, allData.interval, allData.filter, allData.battery);
+                 allData.aveSpeed, allData.maxSpeed, allData.interval, allData.filter, allData.battery, allData.time);
 });
 
 var jussiIcon = L.icon({
@@ -62,7 +62,14 @@ function removeUser(name){
   }
 }
 
-function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery){
+function addZero(i) { // adds leading zero to timestamp to get double digit figure
+if (i < 10) {
+      i = "0" + i;
+    }
+    return i;
+}
+
+function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery, lastTime){
   var point = [lat,lon];
   var intervalUnit = "";
   var filterUnit = "";
@@ -96,6 +103,13 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
   if (battery == undefined ){
     battery = "N/A";
   }
+  // set the time
+  var date = new Date();
+  date.setTime(lastTime);
+  var hours = addZero(date.getHours());
+  var minutes = addZero(date.getMinutes());
+  var seconds = addZero(date.getSeconds());  
+  
   // connect the received location info to locator or create a new one
   if (locators.length >0){
      for (var i=0; i<locators.length; i++){
@@ -104,6 +118,7 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
         var popUpText = name+"<br>"+"speed: " + speed + " km/h (max " + maxSpeed + " km/h)"+
                         "<br>"+"distance: "+ distance + " km"+
                         "<br>"+"average speed: " + aveSpeed + " km/h, time: "+time+
+                        "<br>"+"last location received on: " + hours + ":" + minutes + ":" + seconds +
                         "<br>"+"location interval: " + interval + " " + intervalUnit+
                         "<br>"+"location filter: " + filter + " " + filterUnit+
                         "<br>"+"battery level: " + battery + " %";
@@ -148,6 +163,7 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
                         "<br>"+"distance " + distance + " km"+
                         "<br>"+"average speed " + aveSpeed + " km/h, time: "+time+
+                        "<br>"+"last location received on: " + hours + ":" + minutes + ":" + seconds +
                         "<br>"+"location interval: " + interval + " " + intervalUnit+
                         "<br>"+"location filter: " + filter + " " + filterUnit+
                         "<br>"+"battery level: " + battery + " %";
@@ -188,12 +204,13 @@ function showActiveLocators(client){
     distance = activeLocators['locators'][i].routeDistance;
     lat = activeLocators['locators'][i].lastLocation.lat;
     lon = activeLocators['locators'][i].lastLocation.lon;
+    lastTime = activeLocators['locators'][i].lastLocation.time;
     time = activeLocators['locators'][i].routeTime;
     interval = activeLocators['locators'][i].interval;
     filter = activeLocators['locators'][i].filter;
     battery = activeLocators['locators'][i].battery;
     // show locator on map
-    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery); 
+    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery, lastTime); 
   }
 }
 

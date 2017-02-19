@@ -95,7 +95,7 @@ function locateObject(name){
   var interval = undefined;
   var filter = undefined;
   var battery = undefined;
-  var routeTimeStr = "";
+  var routeTimeStr = "00:00:00";
   console.log("name is "+this.name);
   this.generateGPXFileName = function() {
     var time = getDateTime();
@@ -104,7 +104,7 @@ function locateObject(name){
   };
   this.getLastLocation = function(){
     var locatorData = {"lastLocation": lastLocation,
-                       "routeDistance": routeDistance,
+                       "routeDistance": round(routeDistance,3),
                        "maxSpeed": maxSpeed,
                        "name": this.name,
                        "routeTime": routeTimeStr,
@@ -204,7 +204,7 @@ function locateObject(name){
       coordData["distance"] = 0;
       coordData["speed"] = 0;
       startTime = coordData.time; // set the start time in ms
-      coordData["routetime"] = 0;
+      coordData["routetime"] = "00:00:00";
       coordData["aveSpeed"] = 0;
       coordData["maxSpeed"] = 0;  
     }
@@ -213,13 +213,13 @@ function locateObject(name){
     lastLocation.lon = coordData.lon;
     lastLocation.time = coordData.time;
     // store filter, interval and battery level
-    if (coordData.interval) {
+    if (coordData.interval != null) {
       interval = coordData.interval;
     }
-    if (coordData.filter) {
+    if (coordData.filter != null) {
       filter = coordData.filter;
     }
-    if (coordData.battery) {
+    if (coordData.battery != null) {
       battery = coordData.battery;
     }
     // send coordinates
