@@ -20,7 +20,7 @@ socket.on('PushLocation', function (data) {
   } else if (allData.source === "thingsee") {
   }
   updateLocation(allData.lat, allData.lon, allData.name, allData.speed, allData.distance,allData.routetime,
-                 allData.aveSpeed, allData.maxSpeed, allData.interval, allData.filter, allData.battery, allData.time);
+                 allData.aveSpeed, allData.maxSpeed, allData.interval, allData.filter, allData.battery, allData.time, allData.source);
 });
 
 var jussiIcon = L.icon({
@@ -51,6 +51,13 @@ var xIcon = L.icon({
   iconAnchor: [10, 35],
   popupAnchor: [0, -35]});
   
+var unseenIcon = L.icon({
+  iconUrl: 'unseen_icon_1.png',
+  iconRetinaUrl: 'unseen_icon_1.png',
+  iconSize: [35, 35],
+  iconAnchor: [10, 35],
+  popupAnchor: [0, -35]});
+  
 function removeUser(name){
   if (locators.length >0){
      for (var i=0; i<locators.length; i++){
@@ -69,7 +76,7 @@ if (i < 10) {
     return i;
 }
 
-function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery, lastTime){
+function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery, lastTime, source){
   var point = [lat,lon];
   var intervalUnit = "";
   var filterUnit = "";
@@ -158,7 +165,10 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       }
       else{ // name is unknown
         var icon = xIcon;
-      }
+      } // all the Razrs have the same icon ragardless of the name
+      if (source == 'razr') {
+          var icon = unseenIcon; 
+        }
       // create a new marker
       var popUpText = name+"<br>"+"speed " + speed + " km/h (max " + maxSpeed + " km/h)"+
                         "<br>"+"distance " + distance + " km"+
@@ -174,18 +184,19 @@ function updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpee
       polyline.addLatLng(point);
       // create a new locator
       var bTarget = false;
-      var locator = new locateObject(name, marker, icon, polyline, bTarget);
+      var locator = new locateObject(name, marker, icon, polyline, source, bTarget);
       locators.push({"name": name, "object": locator});
       // Add new locator to Control Targets
       targetSelector.addTarget(locators.length-1);
     }
 }                       
 
-function locateObject(name, marker, icon, polyline){
+function locateObject(name, marker, icon, polyline, source){
   this.name = name;
   this.marker = marker;
   this.icon = icon;
   this.polyline = polyline;
+  this.source = source
 }
 
 function showActiveLocators(client){
@@ -209,8 +220,9 @@ function showActiveLocators(client){
     interval = activeLocators['locators'][i].interval;
     filter = activeLocators['locators'][i].filter;
     battery = activeLocators['locators'][i].battery;
+    source = activeLocators['locators'][i].source;
     // show locator on map
-    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery, lastTime); 
+    updateLocation(lat, lon, name, speed, distance, time, aveSpeed, maxSpeed, interval, filter, battery, lastTime, source); 
   }
 }
 

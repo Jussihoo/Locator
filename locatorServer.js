@@ -84,8 +84,9 @@ function round(value, decimals) {
     return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
 }
 
-function locateObject(name){
+function locateObject(name, source){
   this.name = name;
+  this.source = source;
   var gpxFileName = "";
   var xmlDoc = "";
   var lastLocation = {"lat": 0, "lon": 0, "time": 0};
@@ -110,7 +111,8 @@ function locateObject(name){
                        "routeTime": routeTimeStr,
                        "interval": interval,
                        "filter": filter,
-                       "battery": battery};
+                       "battery": battery,
+                       "source": this.source};
     return locatorData;
   };
   this.createGPXFile = function(){
@@ -165,6 +167,9 @@ function locateObject(name){
     });
   };
   this.sendCoordinates = function(coordData, source, res){
+    if (this.source == "") {
+      this.source = source;
+    }
   	coordData["source"] = source;
     if (gpxFileName != ""){
       this.updateGPXFile(coordData.lat, coordData.lon);
@@ -245,7 +250,8 @@ function handleRouteStart(name, gpx, res){
     }
     if (!nameFound){
       console.log("name not found");
-      var locator = new locateObject(name);
+      var source = "";
+      var locator = new locateObject(name,source);
       var gpxFileName = "";
       if (gpx){ // create GPX File
         locator.generateGPXFileName(name);
@@ -317,9 +323,16 @@ function handleCoordinates(coordData, source, res){
 //REST API implementation sending the coordinates from the mobile phone
 server.post('/sendCoords', function (req, res, next) {
     var coordData = req.params;
+    var source = "";
     console.log ("coordinates received from phone");
     console.dir(coordData);
-    handleCoordinates(coordData, "phone", res);
+    if (coordData.source) {
+      source = coordData.source;
+    }
+    else {
+      source = "phone"; /* default behaviour */
+    }
+    handleCoordinates(coordData, source, res);
     next();
 });
 
